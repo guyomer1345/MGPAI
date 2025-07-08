@@ -20,4 +20,3 @@ export default function PortalWrapper({ children }: PortalWrapperProps) {
   // Create a portal that renders children into the document body
   return mounted ? createPortal(children, document.body) : null
 }
-

@@ -305,4 +305,3 @@ export default function WorkoutDayModal({ isOpen, onClose, workout }: WorkoutDay
     </AnimatePresence>
   )
 }
-

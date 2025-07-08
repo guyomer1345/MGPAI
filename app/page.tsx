@@ -1,10 +1,7 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
 import MobileHeader from "@/components/mobile-header"
-import { motion } from "framer-motion"
 import {
-  Check,
   Zap,
   Trophy,
   ChevronLeft,
@@ -38,8 +35,11 @@ import {
   Plus,
 } from "lucide-react"
 import Link from "next/link"
+import { useState, useEffect, useRef } from "react"
 import WorkoutDayModal from "@/components/workout-day-modal"
-import { AnimatePresence } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
+import NutritionRewardCard from "@/components/nutrition-reward-card"
+import WorkoutCircle from "@/components/workout-circle"
 
 export default function HomePage() {
   const [activeView, setActiveView] = useState<"weekly" | "quarterly">("weekly")
@@ -495,6 +495,9 @@ export default function HomePage() {
               </div>
             </button>
 
+            {/* Post-Workout Nutrition Reward Card */}
+            <NutritionRewardCard />
+
             {/* Stats Popup */}
             {showStatsPopup && (
               <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
@@ -649,151 +652,33 @@ export default function HomePage() {
                 </div>
 
                 {/* Workout day circles positioned along the path */}
-                {weeklyData.map((item, index) => {
-                  const isLeft = index % 2 === 0
-                  const Icon = item.icon
-                  const isCurrent = item.day === 16
-
-                  return (
-                    <div
-                      key={item.day}
-                      className="absolute"
-                      style={{
-                        top: item.position.top,
-                        left: item.position.left,
-                        transform: "translate(-50%, -50%)",
-                      }}
-                    >
-                      <div className="relative">
-                        {/* Modern circle with clean outline and shadow */}
-                        <div
-                          className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-105 relative cursor-pointer
-${
-  item.isReward
-    ? "hover:shadow-[0_0_15px_rgba(255,215,0,0.5)]"
-    : item.status === "current"
-      ? "hover:shadow-[0_0_15px_rgba(124,87,255,0.5)]"
-      : item.completed
-        ? "hover:shadow-[0_0_15px_rgba(96,165,250,0.5)]"
-        : "hover:shadow-[0_0_15px_rgba(255,255,255,0.2)]"
-}`}
-                          style={{
-                            background: item.isReward
-                              ? "radial-gradient(circle at 30% 30%, #ffd700, #ff9d00)"
-                              : item.status === "current"
-                                ? "linear-gradient(135deg, #7c57ff, #00c6ff)"
-                                : item.completed
-                                  ? "linear-gradient(135deg, #60a5fa, #3b82f6)"
-                                  : "linear-gradient(135deg, #3f3f3f, #2a2a2a)",
-                            border: item.isReward
-                              ? "2px solid rgba(255, 215, 0, 0.6)"
-                              : "2px solid rgba(255, 255, 255, 0.1)",
-                            boxShadow: item.isReward
-                              ? "0 4px 12px rgba(255, 215, 0, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.3)"
-                              : item.status === "current"
-                                ? "0 4px 15px rgba(124, 87, 255, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2)"
-                                : item.completed
-                                  ? "0 4px 15px rgba(96, 165, 250, 0.2), 0 1px 2px rgba(0, 0, 0, 0.2)"
-                                  : "0 4px 10px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2)",
-                            transform: "translateZ(0)", // Force GPU acceleration
-                          }}
-                          onClick={() => handleWorkoutDayClick(item)}
-                        >
-                          {/* Workout type icon */}
-                          <div className="absolute inset-0 flex items-center justify-center opacity-10">
-                            <Icon className="w-8 h-8 text-white" />
-                          </div>
-
-                          {/* Day number */}
-                          <span
-                            className={`font-bold text-xl relative z-10 ${item.isReward ? "text-black" : "text-white"}`}
-                          >
-                            {item.day}
-                          </span>
-                        </div>
-
-                        {/* Remove the Preview Button */}
-
-                        {/* Status indicator with clean design */}
-                        <div className="absolute -bottom-1 -right-1">
-                          <div
-                            className={`w-7 h-7 rounded-full flex items-center justify-center border border-background`}
-                            style={{
-                              background: item.isReward
-                                ? "radial-gradient(circle at 30% 30%, #ffd700, #ff9d00)"
-                                : item.status === "current"
-                                  ? "linear-gradient(135deg, #7c57ff, #00c6ff)"
-                                  : item.completed
-                                    ? "linear-gradient(135deg, #60a5fa, #3b82f6)"
-                                    : "linear-gradient(135deg, #3f3f3f, #2a2a2a)",
-                              boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
-                            }}
-                          >
-                            {item.isReward ? (
-                              <Trophy className="w-4 h-4 text-black drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]" />
-                            ) : item.completed ? (
-                              <Check className="w-4 h-4 text-white" />
-                            ) : item.status === "current" ? (
-                              <Zap className="w-4 h-4 text-white" />
-                            ) : (
-                              <span className="w-2 h-2 bg-gray-500 rounded-full"></span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Only add Start Workout button for Circle 16 (current day) */}
-                        {item.day === 16 && (
-                          <Link href="/workout" className="absolute top-1/2 left-full transform -translate-y-1/2 ml-3">
-                            <button className="bg-gradient-to-r from-[#7c57ff] to-[#00c6ff] text-white py-1.5 px-3 rounded-lg flex items-center justify-center transition-all duration-300 hover:shadow-lg hover:shadow-[#7c57ff]/30 text-sm whitespace-nowrap">
-                              <Play className="w-3.5 h-3.5 mr-1.5 text-white" fill="currentColor" />
-                              <span className="font-medium">Start Workout</span>
-                            </button>
-                          </Link>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
+                {weeklyData.map((item) => (
+                  <WorkoutCircle
+                    key={item.day}
+                    day={item.day}
+                    status={item.status as "check" | "current" | "upcoming"}
+                    name={item.name}
+                    color={item.color}
+                    icon={item.icon}
+                    isReward={item.isReward}
+                    onClick={() => handleWorkoutDayClick(item)}
+                    position={item.position}
+                  />
+                ))}
 
                 {/* Next week preview circles */}
-                {nextWeekData.map((item, index) => {
-                  const isLeft = index % 2 === 0
-                  const Icon = item.icon
-
-                  return (
-                    <div
-                      key={item.day}
-                      className="absolute"
-                      style={{
-                        top: item.position.top,
-                        left: item.position.left,
-                        transform: "translate(-50%, -50%)",
-                      }}
-                    >
-                      <div className="relative">
-                        {/* Next week circle with faded appearance */}
-                        <div
-                          className="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-105 relative hover:shadow-[0_0_15px_rgba(255,255,255,0.2)] cursor-pointer"
-                          style={{
-                            background: "linear-gradient(135deg, #3f3f3f, #2a2a2a)",
-                            border: "2px solid rgba(255, 255, 255, 0.05)",
-                            boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.2)",
-                            opacity: 0.7,
-                          }}
-                          onClick={() => handleWorkoutDayClick(item)}
-                        >
-                          {/* Workout type icon */}
-                          <div className="absolute inset-0 flex items-center justify-center opacity-10">
-                            <Icon className="w-7 h-7 text-white" />
-                          </div>
-
-                          {/* Day number */}
-                          <span className="font-bold text-lg relative z-10 text-white">{item.day}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
+                {nextWeekData.map((item) => (
+                  <WorkoutCircle
+                    key={item.day}
+                    day={item.day}
+                    status={item.status as "check" | "current" | "upcoming"}
+                    name={item.name}
+                    color={item.color}
+                    icon={item.icon}
+                    onClick={() => handleWorkoutDayClick(item)}
+                    position={item.position}
+                  />
+                ))}
 
                 {/* View more next week indicator */}
                 <div className="absolute" style={{ top: "730px", left: "50%", transform: "translate(-50%, -50%)" }}>
@@ -1592,4 +1477,3 @@ ${
     </main>
   )
 }
-

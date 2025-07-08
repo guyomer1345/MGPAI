@@ -1,24 +1,12 @@
 "use client"
 
 import MobileHeader from "@/components/mobile-header"
-import {
-  Clock,
-  Users,
-  Play,
-  CheckCircle,
-  ArrowRight,
-  Target,
-  Award,
-  Pause,
-  X,
-  Eye,
-  ChevronDown,
-  MessageCircle,
-} from "lucide-react"
+import { Clock, Users, Play, CheckCircle, ArrowRight, Target, Award, Pause, X, Eye, ChevronDown } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import CibusRewardCard from "@/components/cibus-reward-card"
 
 export default function WorkoutPage() {
   const [workoutStarted, setWorkoutStarted] = useState(false)
@@ -28,7 +16,6 @@ export default function WorkoutPage() {
   const [activeExerciseView, setActiveExerciseView] = useState<number | null>(null)
   const [exerciseProgress, setExerciseProgress] = useState<Record<number, number>>({})
   const [showConfetti, setShowConfetti] = useState(false)
-  const [showAssistantButton, setShowAssistantButton] = useState(false)
   const exerciseRefs = useRef<(HTMLDivElement | null)[]>([])
   const timerRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -185,7 +172,6 @@ export default function WorkoutPage() {
       setCurrentExerciseIndex(0)
       setActiveExerciseView(null)
       setExerciseProgress({})
-      setShowAssistantButton(false)
 
       if (timerRef.current) {
         clearInterval(timerRef.current)
@@ -214,11 +200,6 @@ export default function WorkoutPage() {
     setTimeout(() => {
       exerciseRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "center" })
     }, 300)
-
-    // Show the assistant button after a short delay
-    setTimeout(() => {
-      setShowAssistantButton(true)
-    }, 1000)
   }
 
   // Complete current exercise and move to next
@@ -245,7 +226,6 @@ export default function WorkoutPage() {
 
     // Close the active exercise view
     setActiveExerciseView(null)
-    setShowAssistantButton(false)
 
     // Find next uncompleted exercise
     const nextIndex = exercises.findIndex((ex) => ex.id > exerciseId && !completedExercises.includes(ex.id))
@@ -289,7 +269,6 @@ export default function WorkoutPage() {
       setCurrentExerciseIndex(0)
       setActiveExerciseView(null)
       setExerciseProgress({})
-      setShowAssistantButton(false)
       setShowConfetti(false)
     }, 2000)
   }
@@ -581,6 +560,15 @@ export default function WorkoutPage() {
                   <X className="w-5 h-5" />
                 </motion.button>
               </div>
+              {allExercisesCompleted && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                >
+                  <CibusRewardCard userName="Alex" workoutName="Back training + Front hand" caloriesBurned={320} />
+                </motion.div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -791,15 +779,6 @@ export default function WorkoutPage() {
                           </div>
                         </div>
                       </div>
-
-                      {/* Assistant Button - Only show when exercise is active and viewing */}
-                      {isActive && isViewing && showAssistantButton && (
-                        <Link href={`/workout/exercise/${exercise.id}/assistant`}>
-                          <div className="absolute bottom-3 right-3 w-12 h-12 rounded-full bg-[#ffeb3b] flex items-center justify-center cursor-pointer shadow-lg hover:scale-110 transition-all duration-300 hover:shadow-[0_0_15px_rgba(255,235,59,0.5)] animate-pulse-slow">
-                            <MessageCircle className="w-6 h-6 text-[#1e1e1e]" />
-                          </div>
-                        </Link>
-                      )}
                     </div>
 
                     <div className="p-4">
@@ -830,9 +809,7 @@ export default function WorkoutPage() {
                                 boxShadow: [
                                   "0 0 0px rgba(124, 87, 255, 0.3)",
                                   "0 0 15px rgba(124, 87, 255, 0.5)",
-                                  "0 0 0px rgba(87,255,0.3)",
-                                  "0 0 15px rgba(124,87,255,0.5)",
-                                  "0 0 0px rgba(124,87,255,0.3)",
+                                  "0 0 0px rgba(124, 87, 255, 0.3)",
                                 ],
                                 transition: {
                                   duration: 2,
@@ -944,15 +921,6 @@ export default function WorkoutPage() {
                           transition: { duration: 0.3 },
                         }}
                       />
-
-                      {/* Assistant Button */}
-                      {showAssistantButton && (
-                        <Link href={`/workout/exercise/${exercise.id}/assistant`}>
-                          <div className="absolute bottom-3 right-3 w-12 h-12 rounded-full bg-[#ffeb3b] flex items-center justify-center cursor-pointer shadow-lg hover:scale-110 transition-all duration-300 hover:shadow-[0_0_15px_rgba(255,235,59,0.5)] animate-pulse-slow">
-                            <MessageCircle className="w-6 h-6 text-[#1e1e1e]" />
-                          </div>
-                        </Link>
-                      )}
                     </div>
 
                     <div className="grid grid-cols-3 gap-2 mb-4">
@@ -1079,4 +1047,3 @@ export default function WorkoutPage() {
     </main>
   )
 }
-

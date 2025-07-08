@@ -276,4 +276,3 @@ export const useWorkout = () => {
   }
   return context
 }
-

@@ -25,4 +25,3 @@ export default function Edit({ className }: { className?: string }) {
     </svg>
   )
 }
-

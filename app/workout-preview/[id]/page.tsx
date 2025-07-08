@@ -346,4 +346,3 @@ export default function WorkoutPreviewPage({ params }: { params: { id: string } 
     </main>
   )
 }
-

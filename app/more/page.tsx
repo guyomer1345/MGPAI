@@ -87,4 +87,3 @@ export default function MorePage() {
     </main>
   )
 }
-
