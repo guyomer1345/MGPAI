@@ -35,14 +35,11 @@ export default function ChatPage() {
         const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY
 
         if (!apiKey) {
-          console.warn("OpenAI API key is missing. Using fallback mode.")
-          setApiError(
-            "OpenAI API key is missing. The assistant will operate in fallback mode with limited functionality.",
-          )
+          setApiError("OpenAI API key is missing. Please check your environment variables.")
+          return
         }
 
-        // Create the API instance even with an empty key - it will use fallback mode
-        const api = getAssistantAPI(apiKey || "")
+        const api = getAssistantAPI(apiKey)
 
         // Set a mock user profile for demonstration
         api.setUserProfile({
@@ -63,30 +60,10 @@ export default function ChatPage() {
         if (history.length > 0) {
           setMessages(history)
         }
-
-        // Test the API with a simple message to check if it's working
-        if (apiKey) {
-          try {
-            await api.sendMessage("test")
-          } catch (error) {
-            console.error("API test failed:", error)
-            if (
-              error instanceof Error &&
-              (error.message.includes("quota") ||
-                error.message.includes("billing") ||
-                error.message.includes("exceeded"))
-            ) {
-              setApiError(
-                "The OpenAI API quota has been exceeded. The assistant will operate in fallback mode with limited functionality. To fix this, the account owner needs to check their OpenAI billing settings.",
-              )
-            }
-          }
-        }
       } catch (error) {
         console.error("Failed to initialize assistant API:", error)
 
-        let errorMessage =
-          "Failed to initialize the assistant. The assistant will operate in fallback mode with limited functionality."
+        let errorMessage = "Failed to initialize the assistant. Please check your API key and try again."
 
         // Check if it's a quota exceeded error
         if (
@@ -100,10 +77,6 @@ export default function ChatPage() {
         }
 
         setApiError(errorMessage)
-
-        // Create a fallback API instance
-        const fallbackApi = getAssistantAPI("")
-        setAssistantApi(fallbackApi)
       }
     }
 
@@ -277,32 +250,35 @@ export default function ChatPage() {
         setPendingAction(null)
       }
 
-      // Check if response contains fallback notice and set API error if needed
-      if (response.content.includes("API quota exceeded")) {
-        setApiError(
-          "The OpenAI API quota has been exceeded. The assistant will operate in fallback mode with limited functionality.",
-        )
-      }
-
       // Update messages with API response
       setMessages((prev) => [...prev, response])
     } catch (error) {
       console.error("Error sending message:", error)
 
-      // Always use fallback mode if there's an error
-      const fallbackResponse = {
-        role: "assistant" as const,
-        content:
-          "I'm sorry, I encountered an error processing your request. I'll operate in fallback mode for now. You can ask me about your workout schedule, nutrition advice, or exercise recommendations.\n\n(Note: Using fallback mode due to API connection issues)",
-        timestamp: new Date(),
+      let errorMessage = "I'm sorry, I encountered an error processing your request. Please try again."
+
+      // Check if it's a quota exceeded error
+      if (
+        error instanceof Error &&
+        (error.message.includes("quota") ||
+          error.message.includes("billing") ||
+          error.message.includes("QUOTA_EXCEEDED"))
+      ) {
+        errorMessage =
+          "I'm operating in fallback mode because the OpenAI API quota has been exceeded. " +
+          "You'll receive pre-programmed responses instead of AI-generated ones. " +
+          "To fix this, the account owner needs to check their OpenAI billing settings."
       }
 
-      setApiError(
-        "There was an error connecting to the OpenAI API. The assistant will operate in fallback mode with limited functionality.",
-      )
-
-      // Add fallback message
-      setMessages((prev) => [...prev, fallbackResponse])
+      // Add error message
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: errorMessage,
+          timestamp: new Date(),
+        },
+      ])
     } finally {
       setIsTyping(false)
     }
@@ -365,7 +341,6 @@ export default function ChatPage() {
               </button>
             </div>
           )}
-
           {/* Quota Warning Banner */}
           {apiError && apiError.includes("quota") && (
             <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 text-center mb-4">
@@ -496,4 +471,3 @@ export default function ChatPage() {
     </main>
   )
 }
-

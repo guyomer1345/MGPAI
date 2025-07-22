@@ -1,26 +1,15 @@
 "use client"
 
 import MobileHeader from "@/components/mobile-header"
-import {
-  Clock,
-  Users,
-  Play,
-  CheckCircle,
-  ArrowRight,
-  Target,
-  Award,
-  Pause,
-  X,
-  Eye,
-  ChevronDown,
-  MessageCircle,
-} from "lucide-react"
+import { Clock, Users, Play, CheckCircle, ArrowRight, Target, Pause, X, Eye, ChevronDown } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useRouter } from "next/navigation"
 
 export default function WorkoutPage() {
+  const router = useRouter()
   const [workoutStarted, setWorkoutStarted] = useState(false)
   const [workoutPaused, setWorkoutPaused] = useState(false)
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0)
@@ -28,11 +17,10 @@ export default function WorkoutPage() {
   const [activeExerciseView, setActiveExerciseView] = useState<number | null>(null)
   const [exerciseProgress, setExerciseProgress] = useState<Record<number, number>>({})
   const [showConfetti, setShowConfetti] = useState(false)
-  const [showAssistantButton, setShowAssistantButton] = useState(false)
   const exerciseRefs = useRef<(HTMLDivElement | null)[]>([])
   const timerRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Exercise data with images
+  // Exercise data with updated visuals for all exercises
   const exercises = [
     {
       id: 1,
@@ -40,21 +28,23 @@ export default function WorkoutPage() {
       sets: 3,
       reps: "12, 10, 8",
       time: "10 min",
-      image: "/placeholder.svg?height=200&width=300",
+      image: "/images/t-bar-rows.gif",
+      backgroundImage: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
       muscles: "Back, Lats",
       difficulty: "Intermediate",
       instructions: [
         "Position yourself on the T-bar row machine with your chest against the pad.",
-        "Grasp the handles with both hands.",
-        "Keep your back straight and core engaged.",
-        "Pull the handles towards your lower chest.",
-        "Squeeze your back muscles at the top of the movement.",
-        "Slowly lower the weight back to the starting position.",
+        "Grasp the handles with both hands using a neutral grip.",
+        "Keep your back straight and core engaged throughout the movement.",
+        "Pull the handles towards your lower chest, squeezing your shoulder blades together.",
+        "Focus on squeezing your back muscles at the top of the movement.",
+        "Slowly lower the weight back to the starting position with control.",
+        "Maintain tension in your lats throughout the entire range of motion.",
       ],
       muscleGroups: [
-        { name: "Latissimus Dorsi", percentage: 70, color: "#7c57ff" },
-        { name: "Rhomboids", percentage: 20, color: "#00c6ff" },
-        { name: "Biceps", percentage: 10, color: "#aaf163" },
+        { name: "Latissimus Dorsi", percentage: 70, color: "#667eea" },
+        { name: "Rhomboids", percentage: 20, color: "#764ba2" },
+        { name: "Biceps", percentage: 10, color: "#f093fb" },
       ],
     },
     {
@@ -63,21 +53,24 @@ export default function WorkoutPage() {
       sets: 3,
       reps: "12, 10, 8",
       time: "8 min",
-      image: "/placeholder.svg?height=200&width=300",
+      image: "/images/lat-pulldown.gif",
+      backgroundImage: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
       muscles: "Back, Shoulders",
       difficulty: "Beginner",
       instructions: [
         "Sit at the lat pulldown machine with your thighs secured under the pads.",
         "Grasp the bar with a wide grip, palms facing forward.",
+        "Keep your torso upright and chest out throughout the movement.",
         "Pull the bar down to your upper chest while keeping your back straight.",
-        "Squeeze your back muscles at the bottom of the movement.",
+        "Squeeze your back muscles and hold briefly at the bottom.",
         "Slowly return the bar to the starting position, fully extending your arms.",
-        "Repeat for the desired number of repetitions.",
+        "Focus on using your lats rather than your arms to pull the weight.",
+        "Maintain control throughout the entire range of motion.",
       ],
       muscleGroups: [
-        { name: "Latissimus Dorsi", percentage: 60, color: "#7c57ff" },
-        { name: "Biceps", percentage: 20, color: "#00c6ff" },
-        { name: "Rear Deltoids", percentage: 20, color: "#aaf163" },
+        { name: "Latissimus Dorsi", percentage: 60, color: "#4facfe" },
+        { name: "Biceps", percentage: 20, color: "#00f2fe" },
+        { name: "Rear Deltoids", percentage: 20, color: "#a8edea" },
       ],
     },
     {
@@ -86,21 +79,24 @@ export default function WorkoutPage() {
       sets: 4,
       reps: "12, 10, 8, 8",
       time: "10 min",
-      image: "/placeholder.svg?height=200&width=300",
+      image: "/images/hammer-curl.gif",
+      backgroundImage: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
       muscles: "Biceps, Forearms",
       difficulty: "Intermediate",
       instructions: [
         "Stand with feet shoulder-width apart, holding a dumbbell in each hand.",
-        "Keep your elbows close to your sides and palms facing your body.",
-        "Curl the weights up while keeping your palms facing each other.",
-        "Squeeze your biceps at the top of the movement.",
+        "Keep your elbows close to your sides and palms facing your body (neutral grip).",
+        "Maintain a straight posture with your core engaged.",
+        "Curl the weights up while keeping your palms facing each other throughout.",
+        "Squeeze your biceps at the top of the movement and hold briefly.",
         "Lower the weights back to the starting position with control.",
-        "Repeat for the desired number of repetitions.",
+        "Keep your wrists straight and avoid swinging the weights.",
+        "Focus on the biceps and brachialis muscles working together.",
       ],
       muscleGroups: [
-        { name: "Biceps Brachii", percentage: 50, color: "#7c57ff" },
-        { name: "Brachialis", percentage: 30, color: "#00c6ff" },
-        { name: "Brachioradialis", percentage: 20, color: "#aaf163" },
+        { name: "Biceps Brachii", percentage: 50, color: "#fa709a" },
+        { name: "Brachialis", percentage: 30, color: "#fee140" },
+        { name: "Brachioradialis", percentage: 20, color: "#ffeaa7" },
       ],
     },
   ]
@@ -113,7 +109,7 @@ export default function WorkoutPage() {
   // Calculate progress percentage
   const progressPercentage = (completedExercises.length / exercises.length) * 100
 
-  // Start workout function with enhanced animation
+  // Start workout function with enhanced animation - now automatically starts first exercise
   const startWorkout = () => {
     setWorkoutStarted(true)
     setWorkoutPaused(false)
@@ -121,14 +117,18 @@ export default function WorkoutPage() {
     setCompletedExercises([])
     setExerciseProgress({})
 
+    // Automatically start the first exercise
+    const firstExercise = exercises[0]
+    setActiveExerciseView(firstExercise.id)
+
     // Initialize progress for first exercise
     setExerciseProgress((prev) => ({
       ...prev,
-      [exercises[0].id]: 0,
+      [firstExercise.id]: 0,
     }))
 
     // Start progress timer for first exercise
-    startExerciseProgressTimer(exercises[0].id)
+    startExerciseProgressTimer(firstExercise.id)
 
     // Scroll to first exercise with smooth animation
     setTimeout(() => {
@@ -185,7 +185,6 @@ export default function WorkoutPage() {
       setCurrentExerciseIndex(0)
       setActiveExerciseView(null)
       setExerciseProgress({})
-      setShowAssistantButton(false)
 
       if (timerRef.current) {
         clearInterval(timerRef.current)
@@ -214,14 +213,9 @@ export default function WorkoutPage() {
     setTimeout(() => {
       exerciseRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "center" })
     }, 300)
-
-    // Show the assistant button after a short delay
-    setTimeout(() => {
-      setShowAssistantButton(true)
-    }, 1000)
   }
 
-  // Complete current exercise and move to next
+  // Complete current exercise and move to next, or finish workout
   const completeExercise = (exerciseId: number) => {
     // Stop the timer
     if (timerRef.current) {
@@ -234,38 +228,40 @@ export default function WorkoutPage() {
       [exerciseId]: 100,
     }))
 
-    // Show confetti animation
+    // Show confetti animation for completing an exercise
     setShowConfetti(true)
     setTimeout(() => setShowConfetti(false), 2000)
 
-    // Mark as completed if not already
-    if (!completedExercises.includes(exerciseId)) {
-      setCompletedExercises((prev) => [...prev, exerciseId])
-    }
-
     // Close the active exercise view
     setActiveExerciseView(null)
-    setShowAssistantButton(false)
 
-    // Find next uncompleted exercise
-    const nextIndex = exercises.findIndex((ex) => ex.id > exerciseId && !completedExercises.includes(ex.id))
+    // Mark as completed and check if workout is finished
+    if (!completedExercises.includes(exerciseId)) {
+      const updatedCompleted = [...completedExercises, exerciseId]
+      setCompletedExercises(updatedCompleted)
 
-    if (nextIndex !== -1) {
-      setCurrentExerciseIndex(nextIndex)
+      if (updatedCompleted.length === exercises.length) {
+        // All exercises are done, automatically complete the workout
+        setTimeout(() => {
+          completeWorkout()
+        }, 500)
+      } else {
+        // Find next uncompleted exercise
+        const nextIndex = exercises.findIndex((ex) => ex.id > exerciseId && !updatedCompleted.includes(ex.id))
 
-      // Initialize progress for next exercise
-      setExerciseProgress((prev) => ({
-        ...prev,
-        [exercises[nextIndex].id]: 0,
-      }))
-
-      // Start progress timer for next exercise
-      startExerciseProgressTimer(exercises[nextIndex].id)
-
-      // Scroll to next exercise
-      setTimeout(() => {
-        exerciseRefs.current[nextIndex]?.scrollIntoView({ behavior: "smooth", block: "center" })
-      }, 300)
+        if (nextIndex !== -1) {
+          setCurrentExerciseIndex(nextIndex)
+          setActiveExerciseView(exercises[nextIndex].id)
+          setExerciseProgress((prev) => ({
+            ...prev,
+            [exercises[nextIndex].id]: 0,
+          }))
+          startExerciseProgressTimer(exercises[nextIndex].id)
+          setTimeout(() => {
+            exerciseRefs.current[nextIndex]?.scrollIntoView({ behavior: "smooth", block: "center" })
+          }, 300)
+        }
+      }
     }
   }
 
@@ -279,19 +275,10 @@ export default function WorkoutPage() {
     // Show confetti animation
     setShowConfetti(true)
 
-    // Animation and feedback
+    // Animation and feedback, then redirect
     setTimeout(() => {
-      alert("Workout completed! Great job!")
-      // Reset state
-      setWorkoutStarted(false)
-      setWorkoutPaused(false)
-      setCompletedExercises([])
-      setCurrentExerciseIndex(0)
-      setActiveExerciseView(null)
-      setExerciseProgress({})
-      setShowAssistantButton(false)
-      setShowConfetti(false)
-    }, 2000)
+      router.push("/?workout_completed=true")
+    }, 2000) // Wait for confetti to be visible
   }
 
   // Clean up timer on unmount
@@ -506,7 +493,7 @@ export default function WorkoutPage() {
                   }}
                 >
                   <Clock className="w-5 h-5 text-[#00c6ff] mx-auto mb-1" />
-                  <p className="text-white/70 text-xs">Estimated Time Left</p>
+                  <p className="text-white/70 text-xs mb-1">Estimated Time Left</p>
                   <p className="text-white font-bold">{totalTime - completedExercises.length * 9} min</p>
                 </motion.div>
 
@@ -528,30 +515,7 @@ export default function WorkoutPage() {
               </div>
 
               <div className="flex space-x-3">
-                {allExercisesCompleted ? (
-                  <motion.button
-                    onClick={completeWorkout}
-                    className="flex-1 bg-gradient-to-r from-[#aaf163] to-[#7c57ff] text-white py-3 px-6 rounded-xl flex items-center justify-center transition-all duration-300 hover:shadow-lg hover:shadow-[#aaf163]/30"
-                    whileHover={{ scale: 1.03, boxShadow: "0 0 20px rgba(170, 241, 99, 0.3)" }}
-                    whileTap={{ scale: 0.97 }}
-                    animate={{
-                      scale: [1, 1.05, 1],
-                      boxShadow: [
-                        "0 0 0px rgba(170, 241, 99, 0.3)",
-                        "0 0 20px rgba(170, 241, 99, 0.5)",
-                        "0 0 0px rgba(170, 241, 99, 0.3)",
-                      ],
-                      transition: {
-                        duration: 2,
-                        repeat: Number.POSITIVE_INFINITY,
-                        repeatType: "loop",
-                      },
-                    }}
-                  >
-                    <Award className="w-5 h-5 mr-2" />
-                    <span className="font-bold">Complete Workout</span>
-                  </motion.button>
-                ) : (
+                {!allExercisesCompleted && (
                   <motion.button
                     onClick={pauseWorkout}
                     className="flex-1 bg-[#3f3f3f] hover:bg-[#4a4a4a] text-white py-3 px-6 rounded-xl flex items-center justify-center transition-all duration-300"
@@ -759,12 +723,16 @@ export default function WorkoutPage() {
                 {!isViewing ? (
                   <>
                     <div className="relative h-36 overflow-hidden">
+                      {/* Enhanced background for exercises */}
+                      <div className="absolute inset-0 opacity-20" style={{ background: exercise.backgroundImage }} />
+
                       <Image
                         src={exercise.image || "/placeholder.svg"}
                         alt={exercise.name}
                         width={300}
                         height={150}
                         className="w-full h-full object-cover"
+                        unoptimized={exercise.image?.endsWith(".gif")}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
 
@@ -791,99 +759,66 @@ export default function WorkoutPage() {
                           </div>
                         </div>
                       </div>
-
-                      {/* Assistant Button - Only show when exercise is active and viewing */}
-                      {isActive && isViewing && showAssistantButton && (
-                        <Link href={`/workout/exercise/${exercise.id}/assistant`}>
-                          <div className="absolute bottom-3 right-3 w-12 h-12 rounded-full bg-[#ffeb3b] flex items-center justify-center cursor-pointer shadow-lg hover:scale-110 transition-all duration-300 hover:shadow-[0_0_15px_rgba(255,235,59,0.5)] animate-pulse-slow">
-                            <MessageCircle className="w-6 h-6 text-[#1e1e1e]" />
-                          </div>
-                        </Link>
-                      )}
                     </div>
 
                     <div className="p-4">
                       <div className="grid grid-cols-3 gap-2 mb-4">
-                        <div className="bg-[#1a1a1a] rounded-lg p-2 text-center">
+                        <motion.div
+                          className="bg-[#1a1a1a] rounded-lg p-2 text-center"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{
+                            opacity: 1,
+                            y: 0,
+                            transition: { delay: 0.1, duration: 0.3 },
+                          }}
+                        >
                           <p className="text-white/70 text-xs mb-1">Sets</p>
                           <p className="text-white font-bold">{exercise.sets}</p>
-                        </div>
-                        <div className="bg-[#1a1a1a] rounded-lg p-2 text-center">
+                        </motion.div>
+                        <motion.div
+                          className="bg-[#1a1a1a] rounded-lg p-2 text-center"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{
+                            opacity: 1,
+                            y: 0,
+                            transition: { delay: 0.2, duration: 0.3 },
+                          }}
+                        >
                           <p className="text-white/70 text-xs mb-1">Reps</p>
                           <p className="text-white font-bold text-sm">{exercise.reps}</p>
-                        </div>
-                        <div className="bg-[#1a1a1a] rounded-lg p-2 text-center">
+                        </motion.div>
+                        <motion.div
+                          className="bg-[#1a1a1a] rounded-lg p-2 text-center"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{
+                            opacity: 1,
+                            y: 0,
+                            transition: { delay: 0.3, duration: 0.3 },
+                          }}
+                        >
                           <p className="text-white/70 text-xs mb-1">Time</p>
                           <p className="text-white font-bold">{exercise.time}</p>
-                        </div>
+                        </motion.div>
                       </div>
 
                       <div className="flex space-x-3">
-                        {workoutStarted && isActive && !isCompleted ? (
+                        {workoutStarted ? (
                           <>
                             <motion.button
                               onClick={() => setActiveExerciseView(exercise.id)}
-                              className="flex-1 bg-[#7c57ff] hover:bg-[#6744e0] text-white py-3.5 px-4 rounded-lg flex items-center justify-center transition-all duration-300 group"
-                              whileHover={{ scale: 1.03 }}
-                              whileTap={{ scale: 0.97 }}
-                              animate={{
-                                boxShadow: [
-                                  "0 0 0px rgba(124, 87, 255, 0.3)",
-                                  "0 0 15px rgba(124, 87, 255, 0.5)",
-                                  "0 0 0px rgba(87,255,0.3)",
-                                  "0 0 15px rgba(124,87,255,0.5)",
-                                  "0 0 0px rgba(124,87,255,0.3)",
-                                ],
-                                transition: {
-                                  duration: 2,
-                                  repeat: Number.POSITIVE_INFINITY,
-                                  repeatType: "loop",
-                                },
-                              }}
+                              className={`flex-1 ${
+                                isCompleted
+                                  ? "bg-[#3f3f3f] text-white/70"
+                                  : "bg-[#3f3f3f] hover:bg-[#7c57ff] text-white"
+                              } py-3.5 px-4 rounded-lg flex items-center justify-center transition-all duration-300 group`}
+                              whileHover={{ scale: isCompleted ? 1 : 1.02 }}
+                              whileTap={{ scale: isCompleted ? 1 : 0.98 }}
                             >
-                              <span className="mr-2">Start Exercise</span>
-                              <Play className="w-4 h-4 text-white" fill="currentColor" />
+                              <span className="mr-2">{isCompleted ? "Review Exercise" : "View Exercise"}</span>
+                              <Eye className="w-4 h-4 group-hover:scale-110 transition-transform" />
                             </motion.button>
-                            <Link href={`/workout/exercise/${exercise.id}`} className="w-12">
-                              <motion.button
-                                className="w-12 h-12 flex-shrink-0 bg-[#3f3f3f] hover:bg-[#4a4a4a] rounded-lg flex items-center justify-center transition-all duration-300"
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                              >
-                                <Eye className="w-5 h-5 text-white" />
-                              </motion.button>
-                            </Link>
-                          </>
-                        ) : (
-                          <>
-                            {workoutStarted ? (
-                              <motion.button
-                                onClick={() => setActiveExerciseView(exercise.id)}
-                                className={`flex-1 ${
-                                  isCompleted
-                                    ? "bg-[#3f3f3f] text-white/70"
-                                    : "bg-[#3f3f3f] hover:bg-[#7c57ff] text-white"
-                                } py-3.5 px-4 rounded-lg flex items-center justify-center transition-all duration-300 group`}
-                                whileHover={{ scale: isCompleted ? 1 : 1.02 }}
-                                whileTap={{ scale: isCompleted ? 1 : 0.98 }}
-                              >
-                                <span className="mr-2">{isCompleted ? "Review Exercise" : "View Exercise"}</span>
-                                <Eye className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                              </motion.button>
-                            ) : (
-                              <Link href={`/workout/exercise/${exercise.id}`} className="flex-1">
-                                <motion.button
-                                  className="w-full bg-[#3f3f3f] hover:bg-[#7c57ff] text-white py-3.5 px-4 rounded-lg flex items-center justify-center transition-all duration-300 group"
-                                  whileHover={{ scale: 1.02, x: 3 }}
-                                  whileTap={{ scale: 0.98 }}
-                                >
-                                  <span className="mr-2">View Details</span>
-                                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                                </motion.button>
-                              </Link>
-                            )}
 
-                            {workoutStarted && !isCompleted && !isActive && (
+                            {!isCompleted && !isActive && (
                               <motion.button
                                 onClick={() => startExercise(index)}
                                 className="w-12 h-12 flex-shrink-0 bg-[#7c57ff] hover:bg-[#6744e0] rounded-lg flex items-center justify-center transition-all duration-300"
@@ -894,12 +829,23 @@ export default function WorkoutPage() {
                               </motion.button>
                             )}
                           </>
+                        ) : (
+                          <Link href={`/workout/exercise/${exercise.id}`} className="flex-1">
+                            <motion.button
+                              className="w-full bg-[#3f3f3f] hover:bg-[#7c57ff] text-white py-3.5 px-4 rounded-lg flex items-center justify-center transition-all duration-300 group"
+                              whileHover={{ scale: 1.02, x: 3 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              <span className="mr-2">View Details</span>
+                              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            </motion.button>
+                          </Link>
                         )}
                       </div>
                     </div>
                   </>
                 ) : (
-                  // Exercise View Mode - Shows instructions and details
+                  // Exercise View Mode - Shows instructions and details without play button overlay
                   <div className="p-4">
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="text-white font-bold text-xl">{exercise.name}</h3>
@@ -913,46 +859,21 @@ export default function WorkoutPage() {
                       </motion.button>
                     </div>
 
-                    {/* Video Preview - Moved to top for better visibility */}
-                    <div className="aspect-video bg-[#3f3f3f] rounded-xl flex items-center justify-center relative overflow-hidden mb-4 shadow-lg">
+                    {/* Clean Video Preview */}
+                    <div className="aspect-video bg-[#3f3f3f] rounded-xl relative overflow-hidden mb-4 shadow-lg">
+                      {/* Enhanced background for exercises */}
+                      <div className="absolute inset-0 opacity-30" style={{ background: exercise.backgroundImage }} />
+
                       <Image
                         src={exercise.image || "/placeholder.svg"}
                         alt={exercise.name}
                         fill
                         className="object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                        <motion.div
-                          className="w-16 h-16 rounded-full border-2 border-white flex items-center justify-center cursor-pointer"
-                          whileHover={{
-                            scale: 1.1,
-                            borderColor: "#aaf163",
-                            boxShadow: "0 0 15px rgba(255, 255, 255, 0.3)",
-                          }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <Play className="w-8 h-8 text-white hover:text-[#aaf163]" fill="currentColor" />
-                        </motion.div>
-                      </div>
-
-                      {/* Progress Bar */}
-                      <motion.div
-                        className="absolute bottom-0 left-0 h-1 bg-[#aaf163]"
-                        initial={{ width: "0%" }}
-                        animate={{
-                          width: `${progress}%`,
-                          transition: { duration: 0.3 },
-                        }}
+                        unoptimized={exercise.image?.endsWith(".gif")}
                       />
 
-                      {/* Assistant Button */}
-                      {showAssistantButton && (
-                        <Link href={`/workout/exercise/${exercise.id}/assistant`}>
-                          <div className="absolute bottom-3 right-3 w-12 h-12 rounded-full bg-[#ffeb3b] flex items-center justify-center cursor-pointer shadow-lg hover:scale-110 transition-all duration-300 hover:shadow-[0_0_15px_rgba(255,235,59,0.5)] animate-pulse-slow">
-                            <MessageCircle className="w-6 h-6 text-[#1e1e1e]" />
-                          </div>
-                        </Link>
-                      )}
+                      {/* Subtle overlay */}
+                      <div className="absolute inset-0 bg-black/10" />
                     </div>
 
                     <div className="grid grid-cols-3 gap-2 mb-4">
@@ -1027,9 +948,17 @@ export default function WorkoutPage() {
                             </motion.li>
                           ))}
                           {exercise.instructions.length > 3 && (
-                            <li className="text-white/60 text-sm text-center">
+                            <motion.li
+                              className="text-white/60 text-sm text-center"
+                              initial={{ opacity: 0, x: -5 }}
+                              animate={{
+                                opacity: 1,
+                                x: 0,
+                                transition: { delay: 0.8, duration: 0.3 },
+                              }}
+                            >
                               <ChevronDown className="w-4 h-4 inline" /> {exercise.instructions.length - 3} more steps
-                            </li>
+                            </motion.li>
                           )}
                         </ol>
                       </div>
@@ -1056,7 +985,10 @@ export default function WorkoutPage() {
                       <motion.button
                         onClick={() => completeExercise(exercise.id)}
                         className="flex-1 bg-[#aaf163] hover:bg-[#95d84e] text-[#1e1e1e] py-3 px-4 rounded-lg flex items-center justify-center transition-all duration-300 group font-bold"
-                        whileHover={{ scale: 1.03, boxShadow: "0 0 15px rgba(170, 241, 99, 0.3)" }}
+                        whileHover={{
+                          scale: 1.03,
+                          boxShadow: "0 0 15px rgba(170, 241, 99, 0.3)",
+                        }}
                         whileTap={{ scale: 0.97 }}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{
@@ -1079,4 +1011,3 @@ export default function WorkoutPage() {
     </main>
   )
 }
-

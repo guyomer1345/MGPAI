@@ -1,11 +1,6 @@
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions"
-// Add these imports at the top of the file
-import {
-  getWorkoutManager,
-  type WorkoutSchedule,
-  getBreakWorkoutTemplate,
-  suggestAlternativeExercises,
-} from "./workout-manager"
+// Add this import at the top of the file
+import { getWorkoutManager, type WorkoutSchedule } from "./workout-manager"
 
 // Types for the assistant API
 export type AssistantMessage = {
@@ -110,11 +105,6 @@ export class AssistantAPI {
       content: this.systemPrompt,
       timestamp: new Date(),
     })
-
-    // Log if we're in fallback mode
-    if (!apiKey || apiKey.trim() === "") {
-      console.log("AssistantAPI initialized in fallback mode due to missing API key")
-    }
   }
 
   // Set user profile for personalized assistance
@@ -163,8 +153,6 @@ When they want to cancel or reschedule a workout, perform the action directly an
     return prompt
   }
 
-  // Find the sendMessage method and replace it with this improved version that better handles quota exceeded errors
-
   // Send a message to the assistant and get a response
   public async sendMessage(message: string): Promise<AssistantMessage> {
     try {
@@ -205,22 +193,6 @@ When they want to cancel or reschedule a workout, perform the action directly an
         content: msg.content,
       }))
 
-      // Use fallback mode directly without attempting API call if we know the API key is invalid
-      if (!this.apiKey || this.apiKey.trim() === "") {
-        console.log("No valid API key, using fallback mode")
-        const fallbackResponse = this.generateFallbackResponse(message)
-
-        // Add fallback response to conversation history
-        const assistantMessage: AssistantMessage = {
-          role: "assistant",
-          content: fallbackResponse,
-          timestamp: new Date(),
-        }
-        this.conversationHistory.push(assistantMessage)
-
-        return assistantMessage
-      }
-
       try {
         // Make API call to OpenAI
         const response = await fetch(`${this.baseUrl}/chat/completions`, {
@@ -257,34 +229,10 @@ When they want to cancel or reschedule a workout, perform the action directly an
             errorMessage.includes("billing details") ||
             response.status === 429
           ) {
-            console.log("Quota exceeded, using fallback mode")
-            // Use fallback response instead of throwing an error
-            const fallbackResponse = this.generateFallbackResponse(message)
-
-            // Add fallback response to conversation history
-            const assistantMessage: AssistantMessage = {
-              role: "assistant",
-              content: fallbackResponse + "\n\n(Note: API quota exceeded - using fallback responses)",
-              timestamp: new Date(),
-            }
-            this.conversationHistory.push(assistantMessage)
-
-            return assistantMessage
+            throw new Error("QUOTA_EXCEEDED")
           }
 
-          // For other errors, also use fallback mode but with a different message
-          console.log("API error, using fallback mode:", errorMessage)
-          const fallbackResponse = this.generateFallbackResponse(message)
-
-          // Add fallback response to conversation history
-          const assistantMessage: AssistantMessage = {
-            role: "assistant",
-            content: fallbackResponse + "\n\n(Note: API error - using fallback responses)",
-            timestamp: new Date(),
-          }
-          this.conversationHistory.push(assistantMessage)
-
-          return assistantMessage
+          throw new Error(`API error: ${errorMessage}`)
         }
 
         const data = await response.json()
@@ -300,35 +248,28 @@ When they want to cancel or reschedule a workout, perform the action directly an
 
         return assistantMessage
       } catch (error) {
-        console.error("Error in OpenAI API call:", error)
+        // If quota exceeded, use fallback response
+        if (error instanceof Error && error.message === "QUOTA_EXCEEDED") {
+          // Generate a fallback response based on the user's message
+          const fallbackResponse = this.generateFallbackResponse(message)
 
-        // Generate a fallback response for any error
-        const fallbackResponse = this.generateFallbackResponse(message)
+          // Add fallback response to conversation history
+          const assistantMessage: AssistantMessage = {
+            role: "assistant",
+            content: fallbackResponse,
+            timestamp: new Date(),
+          }
+          this.conversationHistory.push(assistantMessage)
 
-        // Add fallback response to conversation history
-        const assistantMessage: AssistantMessage = {
-          role: "assistant",
-          content: fallbackResponse + "\n\n(Note: API connection error - using fallback responses)",
-          timestamp: new Date(),
+          return assistantMessage
         }
-        this.conversationHistory.push(assistantMessage)
 
-        return assistantMessage
+        // Re-throw other errors
+        throw error
       }
     } catch (error) {
       console.error("Error sending message to assistant:", error)
-
-      // Final fallback for any unexpected errors
-      const fallbackResponse = this.generateFallbackResponse(message)
-
-      // Add fallback response to conversation history
-      const assistantMessage: AssistantMessage = {
-        role: "assistant",
-        content: fallbackResponse + "\n\n(Note: Unexpected error - using fallback responses)",
-        timestamp: new Date(),
-      }
-
-      return assistantMessage
+      throw error
     }
   }
 
@@ -389,7 +330,7 @@ When they want to cancel or reschedule a workout, perform the action directly an
     let response = `You have a ${todayWorkout.name} workout scheduled for today. It's a ${todayWorkout.duration}-minute ${todayWorkout.type} workout with the following exercises:\n\n`
 
     todayWorkout.exercises.forEach((exercise, index) => {
-      response += `${index + 1}. ${exercise.name}: ${exercise.sets} sets of ${exercise.reps}`
+      response += `${index + 1}. ${exercise.name}: ${exercise.sets} sets of ${exercise.reps} reps`
       if (exercise.weight) response += ` at ${exercise.weight}`
       response += "\n"
     })
@@ -410,7 +351,7 @@ When they want to cancel or reschedule a workout, perform the action directly an
     let response = `You have a ${workout.name} workout scheduled for ${date.toLocaleDateString()}. It's a ${workout.duration}-minute ${workout.type} workout with the following exercises:\n\n`
 
     workout.exercises.forEach((exercise, index) => {
-      response += `${index + 1}. ${exercise.name}: ${exercise.sets} sets of ${exercise.reps}`
+      response += `${index + 1}. ${exercise.name}: ${exercise.sets} sets of ${exercise.reps} reps`
       if (exercise.weight) response += ` at ${exercise.weight}`
       response += "\n"
     })
@@ -464,37 +405,6 @@ When they want to cancel or reschedule a workout, perform the action directly an
   // Add this new method to generate fallback responses
   private generateFallbackResponse(userMessage: string): string {
     const userMessageLower = userMessage.toLowerCase()
-
-    // First check for scheduling and rescheduling requests
-    if (
-      userMessageLower.includes("reschedule") ||
-      (userMessageLower.includes("move") && userMessageLower.includes("workout"))
-    ) {
-      return "I'd be happy to help you reschedule your workout. Due to API limitations, I'm operating in fallback mode. Please specify when you'd like to reschedule (e.g., 'tomorrow at 5pm' or 'next Monday morning') and I'll do my best to assist you.\n\n(Note: API quota exceeded - using fallback responses)"
-    }
-
-    if (
-      userMessageLower.includes("break") &&
-      (userMessageLower.includes("workout") || userMessageLower.includes("exercise"))
-    ) {
-      const durationMatch = userMessageLower.match(/(\d+)\s*(?:min|minute)/)
-      const duration = durationMatch ? Number.parseInt(durationMatch[1]) : 15
-
-      return `I can suggest a quick ${duration}-minute workout for your break! A short circuit of bodyweight exercises would be perfect: try 3 rounds of 10 push-ups, 15 squats, and 30 seconds of plank with minimal rest between exercises.\n\n(Note: API quota exceeded - using fallback responses)`
-    }
-
-    // Check for unavailability messages
-    if (
-      (userMessageLower.includes("can't") ||
-        userMessageLower.includes("cannot") ||
-        userMessageLower.includes("busy") ||
-        userMessageLower.includes("unavailable")) &&
-      (userMessageLower.includes("today") ||
-        userMessageLower.includes("tomorrow") ||
-        userMessageLower.includes("workout"))
-    ) {
-      return "I understand you're unavailable for your scheduled workout. No problem! Would you like to reschedule it for another day, or would you prefer a shorter alternative workout that fits your schedule better?\n\n(Note: API quota exceeded - using fallback responses)"
-    }
 
     // Check for workout schedule queries
     if (
@@ -794,155 +704,19 @@ Be cautious and emphasize that this is not medical advice. Focus on gentle mobil
     const workoutManager = getWorkoutManager()
     return workoutManager.rescheduleWorkout(workoutId, newDate)
   }
-
-  // Handle rescheduling request
-  public async handleReschedulingRequest(date: string, workoutId?: string): Promise<string> {
-    try {
-      const workoutManager = getWorkoutManager()
-
-      // Parse the date string
-      let targetDate: Date
-
-      if (date.toLowerCase().includes("tomorrow")) {
-        targetDate = new Date()
-        targetDate.setDate(targetDate.getDate() + 1)
-      } else if (date.toLowerCase().includes("next")) {
-        targetDate = new Date()
-        // Handle "next Monday", "next Tuesday", etc.
-        const dayMap: Record<string, number> = {
-          sunday: 0,
-          monday: 1,
-          tuesday: 2,
-          wednesday: 3,
-          thursday: 4,
-          friday: 5,
-          saturday: 6,
-        }
-
-        for (const [day, index] of Object.entries(dayMap)) {
-          if (date.toLowerCase().includes(day)) {
-            const today = targetDate.getDay()
-            const daysUntil = (index - today + 7) % 7
-            targetDate.setDate(targetDate.getDate() + (daysUntil === 0 ? 7 : daysUntil))
-            break
-          }
-        }
-      } else {
-        // Try to parse as a date string
-        targetDate = new Date(date)
-
-        // If invalid, default to tomorrow
-        if (isNaN(targetDate.getTime())) {
-          targetDate = new Date()
-          targetDate.setDate(targetDate.getDate() + 1)
-        }
-      }
-
-      // If no specific workout ID is provided, use today's workout
-      if (!workoutId) {
-        const todayWorkout = workoutManager.getTodayWorkout()
-        if (todayWorkout) {
-          workoutId = todayWorkout.id
-        } else {
-          return "I couldn't find a workout scheduled for today to reschedule. Would you like to schedule a new workout instead?"
-        }
-      }
-
-      // Attempt to reschedule
-      const success = workoutManager.rescheduleWorkout(workoutId, targetDate)
-
-      if (success) {
-        const formattedDate = targetDate.toLocaleDateString("en-US", {
-          weekday: "long",
-          month: "short",
-          day: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-        })
-
-        return `Great! I've rescheduled your workout for ${formattedDate}. I'll send you a reminder before the session. Is there anything else you need help with?`
-      } else {
-        return "I'm sorry, I couldn't reschedule your workout. Please try a different date or time."
-      }
-    } catch (error) {
-      console.error("Error handling rescheduling request:", error)
-      return "I encountered an error while trying to reschedule your workout. Please try again with a specific date and time."
-    }
-  }
-
-  // Handle break workout request
-  public async handleBreakWorkoutRequest(duration: number): Promise<string> {
-    try {
-      const workoutManager = getWorkoutManager()
-
-      // Get the appropriate break workout template
-      const template = getBreakWorkoutTemplate(duration)
-
-      // Add the break workout to the schedule
-      const now = new Date()
-      const breakWorkout = workoutManager.addBreakWorkout(duration, now)
-
-      // Format the response
-      let response = `Perfect! I've added a ${duration}-minute ${template.name} to your schedule for today. Here's what it includes:\n\n`
-
-      breakWorkout.exercises.forEach((exercise, index) => {
-        response += `${index + 1}. ${exercise.name}: ${exercise.sets} ${exercise.sets > 1 ? "sets" : "set"} of ${exercise.reps}\n`
-      })
-
-      response +=
-        "\nYou can access this workout from your quick workouts section. Would you like me to set a reminder for this?"
-
-      return response
-    } catch (error) {
-      console.error("Error handling break workout request:", error)
-      return "I encountered an error while creating your break workout. Please try again with a specific duration."
-    }
-  }
-
-  // Suggest alternative exercises
-  public async suggestAlternativeExercises(targetMuscle: string): Promise<string> {
-    try {
-      const alternatives = suggestAlternativeExercises(targetMuscle)
-
-      let response = `Here are some alternative exercises for ${targetMuscle}:\n\n`
-
-      alternatives.forEach((exercise, index) => {
-        response += `${index + 1}. ${exercise.name}: ${exercise.sets} sets of ${exercise.reps}\n`
-      })
-
-      response += "\nWould you like me to add any of these to your current workout plan?"
-
-      return response
-    } catch (error) {
-      console.error("Error suggesting alternative exercises:", error)
-      return "I encountered an error while finding alternative exercises. Please try again with a specific muscle group."
-    }
-  }
-
-  // Get available time slots for rescheduling
-  public getAvailableTimeSlots(days = 7): Date[] {
-    const workoutManager = getWorkoutManager()
-    const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    return workoutManager.getAvailableTimeSlots(tomorrow, days)
-  }
 }
-
-// Replace the getAssistantAPI function with this improved version
 
 // Create a singleton instance for use throughout the app
 let assistantInstance: AssistantAPI | null = null
 
 export const getAssistantAPI = (apiKey: string): AssistantAPI => {
-  // If we already have an instance, return it regardless of API key
-  if (assistantInstance) {
-    return assistantInstance
+  if (!apiKey || apiKey.trim() === "") {
+    throw new Error("A valid OpenAI API key is required to initialize the Assistant API")
   }
 
-  // Create a new instance even if the API key is invalid
-  // The AssistantAPI class will handle fallback mode internally
-  assistantInstance = new AssistantAPI(apiKey || "")
+  if (!assistantInstance) {
+    assistantInstance = new AssistantAPI(apiKey)
+  }
 
-  return assistantInstance
+  return assistantInstance as AssistantAPI
 }
-

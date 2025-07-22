@@ -1,8 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
 import MobileHeader from "@/components/mobile-header"
-import { motion } from "framer-motion"
 import {
   Check,
   Zap,
@@ -38,8 +36,11 @@ import {
   Plus,
 } from "lucide-react"
 import Link from "next/link"
+import { useState, useEffect, useRef } from "react"
 import WorkoutDayModal from "@/components/workout-day-modal"
-import { AnimatePresence } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
+import { useSearchParams, useRouter } from "next/navigation"
+import WorkoutCompletionToast from "@/components/workout-completion-toast"
 
 export default function HomePage() {
   const [activeView, setActiveView] = useState<"weekly" | "quarterly">("weekly")
@@ -54,6 +55,18 @@ export default function HomePage() {
   const [showWorkoutModal, setShowWorkoutModal] = useState(false)
   const [selectedWorkout, setSelectedWorkout] = useState<any>(null)
   const [activeTab, setActiveTab] = useState<"overview" | "goals" | "calendar">("overview")
+  const [showCompletionToast, setShowCompletionToast] = useState(false)
+
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (searchParams.get("workout_completed") === "true") {
+      setShowCompletionToast(true)
+      // Clean the URL to prevent the toast from showing on refresh
+      router.replace("/", { scroll: false })
+    }
+  }, [searchParams, router])
 
   // Set the background color to be darker
   useEffect(() => {
@@ -1587,9 +1600,10 @@ ${
           workout={selectedWorkout}
         />
       )}
+      {/* Workout Completion Toast */}
+      <WorkoutCompletionToast isOpen={showCompletionToast} onClose={() => setShowCompletionToast(false)} />
       {/* Extra space to ensure content isn't hidden behind fixed button */}
       <div className="h-40"></div>
     </main>
   )
 }
-

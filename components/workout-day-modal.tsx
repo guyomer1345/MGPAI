@@ -5,6 +5,7 @@ import { X, Clock, Dumbbell, Calendar, ChevronRight, Target, BarChart2, Play, Ed
 import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
 import MuscleGroupVisualizer from "./muscle-group-visualizer"
+import Image from "next/image"
 
 interface WorkoutDayModalProps {
   isOpen: boolean
@@ -202,23 +203,37 @@ export default function WorkoutDayModal({ isOpen, onClose, workout }: WorkoutDay
                       transition={{ duration: 0.3 }}
                       className="mt-3 bg-[#1a1a1a] rounded-lg p-4 overflow-hidden"
                     >
-                      <div className="flex items-center justify-center mb-4">
-                        <MuscleGroupVisualizer muscleGroups={workout.muscleGroups} />
-                      </div>
-                      <div className="space-y-2">
-                        {workout.muscleGroups.map((muscle, index) => (
-                          <div key={index} className="flex justify-between items-center">
-                            <div className="flex items-center">
-                              <div
-                                className="w-3 h-3 rounded-full mr-2"
-                                style={{ backgroundColor: muscle.color }}
-                              ></div>
-                              <span className="text-white text-sm">{muscle.name}</span>
-                            </div>
-                            <span className="text-gray-400 text-xs">{muscle.percentage}%</span>
+                      {isToday ? (
+                        <div className="flex items-center justify-center">
+                          <Image
+                            src="/images/targeted-muscles-day16.png"
+                            alt="Targeted muscles for today's workout"
+                            width={400}
+                            height={250}
+                            className="rounded-lg object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center justify-center mb-4">
+                            <MuscleGroupVisualizer muscleGroups={workout.muscleGroups} />
                           </div>
-                        ))}
-                      </div>
+                          <div className="space-y-2">
+                            {workout.muscleGroups.map((muscle, index) => (
+                              <div key={index} className="flex justify-between items-center">
+                                <div className="flex items-center">
+                                  <div
+                                    className="w-3 h-3 rounded-full mr-2"
+                                    style={{ backgroundColor: muscle.color }}
+                                  ></div>
+                                  <span className="text-white text-sm">{muscle.name}</span>
+                                </div>
+                                <span className="text-gray-400 text-xs">{muscle.percentage}%</span>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
                     </motion.div>
                   )}
                 </div>
@@ -305,4 +320,3 @@ export default function WorkoutDayModal({ isOpen, onClose, workout }: WorkoutDay
     </AnimatePresence>
   )
 }
-
